@@ -1,0 +1,38 @@
+name: Formula
+
+on:
+  push:
+    branches: [main]
+    paths: ["Formula/**"]
+  pull_request:
+    paths: ["Formula/**"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install and test the checked-out formula
+        shell: bash
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: "1"
+          HOMEBREW_NO_INSTALL_CLEANUP: "1"
+        run: |
+          set -euo pipefail
+          if [ "$RUNNER_OS" = Linux ]; then
+            eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          fi
+          brew tap jlimas/tap "$GITHUB_WORKSPACE"
+          brew install jlimas/tap/mongoquery
+          brew test jlimas/tap/mongoquery
+          mongoquery --version
